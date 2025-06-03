@@ -47,6 +47,10 @@ class Module(nn.Module):
         user_idx: torch.Tensor, 
         item_idx: torch.Tensor,
     ):
+        """
+        user_idx: (B,)
+        item_idx: (B,)
+        """  
         with torch.no_grad():
             logit = self._score(user_idx, item_idx)
             pred = torch.sigmoid(logit)
@@ -71,20 +75,20 @@ class Module(nn.Module):
 
     def _context(self, user_idx, item_idx):
         # (B, H): item IDs user interacted with (with padding = n_items)
-        user_histories = self.trn_pos_per_user[user_idx]                # long tensor
-        # mask to exclude current target item from history
-        mask_non_target = user_histories != item_idx.unsqueeze(1)       # (B, H)
-        # mask to exclude padding
-        mask_valid = user_histories != self.n_items                     # (B, H)
-        # final mask: valid and not target
-        mask = mask_non_target & mask_valid                             # (B, H)
+        user_histories = self.trn_pos_per_user[user_idx]            # long tensor
+        # mask to current target item from history
+        mask_target = user_histories == item_idx.unsqueeze(1)       # (B, H)
+        # mask to padding
+        mask_padding = user_histories == self.n_items               # (B, H)
+        # final mask
+        mask = mask_target | mask_padding                           # (B, H)
 
         # Get embeddings
-        hist_slice = self.embed_hist(user_histories)                    # (B, H, D)
+        hist_slice = self.embed_hist(user_histories)                # (B, H, D)
 
         # Apply mask
-        mask = mask.unsqueeze(-1).float()                       # (B, H, 1)
-        masked_hist_slice = hist_slice * mask                   # (B, H, D)
+        mask = mask.unsqueeze(-1)                                   # (B, H, 1)
+        masked_hist_slice = hist_slice * (~mask)                    # (B, H, D)
 
         # Sum and normalize
         sum_hist = masked_hist_slice.sum(dim=1)                 # (B, D)
