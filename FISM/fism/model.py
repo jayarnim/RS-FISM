@@ -8,8 +8,8 @@ class Module(nn.Module):
         n_users: int, 
         n_items: int, 
         n_factors: int, 
-        trn_pos_per_user: torch.Tensor,
         alpha: float,
+        trn_pos_per_user: torch.Tensor,
     ):
         super(Module, self).__init__()
         # attr dictionary for load
@@ -25,8 +25,8 @@ class Module(nn.Module):
         self.n_users = n_users
         self.n_items = n_items
         self.n_factors = n_factors
-        self.trn_pos_per_user = trn_pos_per_user.to(self.device)  # shape: (n_users, H)
         self.alpha = alpha
+        self.trn_pos_per_user = trn_pos_per_user.to(self.device)
 
         # generate layers
         self._init_layers()
@@ -76,6 +76,7 @@ class Module(nn.Module):
     def _context(self, user_idx, item_idx):
         # (B, H): item IDs user interacted with (with padding = n_items)
         user_histories = self.trn_pos_per_user[user_idx]            # long tensor
+        
         # mask to current target item from history
         mask_target = user_histories == item_idx.unsqueeze(1)       # (B, H)
         # mask to padding
