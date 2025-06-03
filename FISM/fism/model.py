@@ -18,7 +18,8 @@ class Module(nn.Module):
         del self.init_args["__class__"]
 
         # device setting
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device(DEVICE)
 
         # global attr
         self.n_users = n_users
